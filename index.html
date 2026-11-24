@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cannery Can-Can</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* layout: one column, forest on top, animal cards and rehearsal notebook in the middle, band and workshop below; brass is the only loud color */
+  color-scheme: dark;
+  --night:#1b1a2b;
+  --panel:#26243b;
+  --line:#3c3958;
+  --ink:#f1e9d6;
+  --dim:#a39fba;
+  --brass:#e0a93b;
+  --verdigris:#62c0a8;
+  --alarm:#e4627a;
+  --display:"Bowlby One","Arial Black",Impact,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--night);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.4}
+main{max-width:600px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+h1{font-family:var(--display);font-weight:400;font-size:1.7rem;line-height:1;margin:0;color:var(--brass);letter-spacing:.01em}
+h2{font-family:var(--display);font-weight:400;font-size:1rem;margin:0;letter-spacing:.03em}
+.top{display:flex;flex-direction:column;gap:4px}
+.top .where{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.top .where b{font-weight:800}
+.top p{margin:0;color:var(--dim);font-size:.9rem}
+.day{font-variant-numeric:tabular-nums;font-weight:600;font-size:.85rem;color:var(--dim)}
+canvas{display:block;width:100%;border-radius:12px}
+#stage{background:#17262a;border:1px solid var(--line);aspect-ratio:5/4}
+#msg{min-height:2.8em;margin:0;font-weight:600}
+#msg.win{color:var(--verdigris)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.card.gone{opacity:.45}
+.card .nm{display:flex;align-items:center;gap:8px;font-weight:800}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;flex:none}
+.card .left{margin-left:auto;font-weight:600;color:var(--dim);font-variant-numeric:tabular-nums;font-size:.8rem;text-align:right}
+.card .rumor{font-size:.85rem;color:var(--dim);font-style:italic}
+.card .note{font-size:.85rem;color:var(--verdigris);font-weight:600}
+.dots{display:flex;gap:5px;align-items:center}
+.dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--line)}
+.dots i.on{background:var(--brass);border-color:var(--brass)}
+.dots.full i.on{background:var(--verdigris);border-color:var(--verdigris)}
+.dots.mini{gap:3px}
+.dots.mini i{width:9px;height:9px;border-width:1.5px}
+.verdict{font-weight:800;font-size:.88rem}
+.verdict.all{color:var(--verdigris)}
+.verdict.fled{color:var(--alarm)}
+.verdict.ask{color:var(--dim);font-weight:600}
+.call{min-height:38px;border-radius:9px;border:1px solid var(--brass);background:transparent;color:var(--brass);font:800 .85rem var(--body);cursor:pointer}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.logwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.82rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--dim);font-weight:600;white-space:nowrap}
+td.horn{color:var(--ink);min-width:150px}
+td .ran{color:var(--alarm);font-weight:800}
+.band{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.band button{min-height:42px;border-radius:9px;border:2px solid var(--line);background:#1f1d31;color:var(--ink);font:800 .9rem var(--body);cursor:pointer;padding:0 14px;display:flex;align-items:center;gap:7px}
+.band button .sw{width:11px;height:11px;border-radius:50%}
+.band button[aria-pressed=true]{border-color:var(--ink)}
+.band button:disabled{opacity:.4;cursor:default}
+.band .ghost{border-style:dashed;color:var(--dim);font-weight:600}
+.form{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.form span{text-align:center;padding:6px 0;border-radius:7px;background:#1f1d31;border:1px solid var(--line);font-weight:800;font-size:.85rem;color:var(--dim)}
+.form span.now{border-color:var(--brass);color:var(--brass)}
+.seq{display:grid;gap:4px;align-items:center}
+.seq .sw{width:11px;height:11px;border-radius:50%}
+.cell{min-height:40px;border-radius:7px;border:1px solid var(--line);background:#1f1d31;cursor:pointer;padding:0;color:var(--dim);font:800 .9rem var(--body)}
+.cell[aria-pressed=true]{background:var(--c);border-color:var(--c);color:#231a05}
+#horn{height:110px;background:#1f1d31}
+.ctl{display:flex;flex-direction:column;gap:4px}
+.ctl > span{font-weight:800;font-size:.9rem}
+.ctl > span em{font-style:normal;font-weight:600;color:var(--dim)}
+.seg{display:flex;gap:6px}
+.seg button,.tog{flex:1;min-height:42px;border-radius:9px;border:1px solid var(--line);background:#1f1d31;color:var(--ink);font:600 .88rem var(--body);cursor:pointer;padding:0 8px}
+.seg button[aria-pressed=true],.tog[aria-pressed=true]{background:var(--brass);border-color:var(--brass);color:#231a05;font-weight:800}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.info{margin:0;font-size:.88rem;color:var(--dim)}
+.info strong{color:var(--ink)}
+.info .warn{color:var(--alarm);font-weight:800}
+.go{display:flex;gap:10px;flex-wrap:wrap}
+.go button{min-height:52px;border-radius:12px;border:0;font-family:var(--display);font-size:1rem;letter-spacing:.03em;cursor:pointer;padding:0 12px}
+#rehearse{flex:2 1 160px;background:#1f1d31;color:var(--brass);border:2px solid var(--brass)}
+#march{flex:2 1 120px;background:var(--brass);color:#231a05}
+#moveon{flex:1 1 90px;background:#1f1d31;color:var(--ink);border:2px solid var(--line)}
+#moveon[hidden]{display:none}
+.go button:disabled{opacity:.45;cursor:default}
+button:focus-visible{outline:3px solid var(--verdigris);outline-offset:2px}
+details{color:var(--dim);font-size:.88rem}
+details summary{cursor:pointer;color:var(--ink);font-weight:600}
+details p{margin:.5em 0 0;max-width:62ch}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <h1>Cannery Can-Can</h1>
+    <div class="where"><b id="town"></b><span class="day" id="day"></span></div>
+    <p id="brief"></p>
+  </div>
+
+  <canvas id="stage" aria-label="Forest with a trail, animals and the cannery"></canvas>
+  <p id="msg" role="status"></p>
+
+  <div class="cards" id="cards"></div>
+
+  <section class="panel" aria-label="Rehearsal notebook">
+    <h2>Rehearsal notebook</h2>
+    <div class="logwrap" id="log"></div>
+  </section>
+
+  <section class="panel" aria-label="Band and workshop">
+    <h2>The band</h2>
+    <p class="info">Marching order, front first. Pick a musician to work on their horn.</p>
+    <div class="band" id="band"></div>
+
+    <div class="ctl">
+      <span id="partsL">Song parts</span>
+      <div class="seg" id="parts" role="group" aria-labelledby="partsL">
+        <button type="button" id="parts1" data-v="1">One</button>
+        <button type="button" id="parts2" data-v="2">A B</button>
+        <button type="button" id="parts3" data-v="3">A B C</button>
+      </div>
+    </div>
+    <div class="form" id="form" aria-label="Order of the parts along the trail"></div>
+    <div class="seq" id="seq" role="group" aria-label="Which parts each musician plays in"></div>
+
+    <canvas id="horn" aria-label="The selected musician's horn"></canvas>
+
+    <div class="ctl"><span id="tubeL">Tube <em>sets the pitch</em></span>
+      <div class="seg" data-k="tube" role="group" aria-labelledby="tubeL">
+        <button type="button" id="tube0" data-v="0">Short, high</button><button type="button" id="tube1" data-v="1">Medium</button><button type="button" id="tube2" data-v="2">Long, low</button>
+      </div></div>
+    <div class="ctl"><span id="boreL">Bore <em>sets the tone</em></span>
+      <div class="seg" data-k="bore" role="group" aria-labelledby="boreL">
+        <button type="button" id="bore0" data-v="0">Narrow, bright</button><button type="button" id="bore1" data-v="1">Medium</button><button type="button" id="bore2" data-v="2">Wide, mellow</button>
+      </div></div>
+    <div class="ctl"><span id="paceL">Pace</span>
+      <div class="seg" data-k="pace" role="group" aria-labelledby="paceL">
+        <button type="button" id="pace0" data-v="0">Slow</button><button type="button" id="pace1" data-v="1">Steady</button><button type="button" id="pace2" data-v="2">Quick</button><button type="button" id="pace3" data-v="3">Racing</button>
+      </div></div>
+    <div class="ctl"><span id="bellL">Bell <em>sets how far it carries, not what they think of it</em></span>
+      <div class="seg" data-k="bell" role="group" aria-labelledby="bellL">
+        <button type="button" id="bell0" data-v="0">Small</button><button type="button" id="bell1" data-v="1">Medium</button><button type="button" id="bell2" data-v="2">Large</button>
+      </div></div>
+    <div class="ctl"><span>Extras</span>
+      <div class="row">
+        <button type="button" class="tog" id="tune" aria-pressed="false">Valves (a tune)</button>
+        <button type="button" class="tog" id="fan" aria-pressed="false">Fan (a wobble)</button>
+        <button type="button" class="tog" id="crumple" aria-pressed="false">Crumpled bell (a buzz)</button>
+      </div></div>
+
+    <p class="info" id="breath"></p>
+    <p class="info" id="cost"></p>
+
+    <div class="go">
+      <button type="button" id="rehearse">Rehearse</button>
+      <button type="button" id="march">March</button>
+      <button type="button" id="moveon" hidden>Move on</button>
+    </div>
+
+    <details>
+      <summary>How it works</summary>
+      <p>Each kind of animal wants one particular horn: a pitch, a tone and a pace, and some want an extra as well. The empty dots on its card show how many things it wants.</p>
+      <p>Hear their call to pick up the note and the rhythm they like. Their own voice won't tell you the tone they like.</p>
+      <p>Rehearse to try the selected horn on every animal in the wood at once. Each kind lights one dot for every thing the horn gets right, without saying which. With every dot lit they dance the can-can, and they will follow that horn. If the horn has something they hate, they run off and you learn nothing else. You get 5 rehearsals a day, and the notebook keeps every result.</p>
+      <p>When you march, the band walks the trail playing the song. An animal joins the train when a horn it loves is playing within reach of its bell. An animal that hears a sound it hates runs off, even after joining, so plan who plays in which part of the song.</p>
+      <p>The trail ends at the cannery, where every animal becomes cans of something nice. The band is paid in cans: wages for each musician, the parts in each horn, and a fee for the day. After the first day you can march again for whoever is left, or move on.</p>
+    </details>
+  </section>
+</main>
+
+<script>
+//PURE>
+const BARS=8, SLOTS=8, BPM=126, LUNG=80, REFILL=8;
+const slotDur=60/BPM/2, T=BARS*SLOTS*slotDur;
+const DMAX=.2, LAG=.3, WAGE=12, FEE=8, MAXBAND=3, REHEARSALS=5;
+const TUBE=['Short','Medium','Long'], BORE=['Narrow','Medium','Wide'], BELL=['Small','Medium','Large'], PACE=['Slow','Steady','Quick','Racing'];
+const LEN=[1/6,.5,5/6], WIDE=[1/6,.5,5/6], BELLV=[1/6,.5,1], PACEV=[1,2,4,8];
+const VALVE_PAT=[[0],[0,2],[0,4,7],[0,4,7,12]];
+const ANIMALS={
+  squirrel:{name:'Squirrels',cans:4,color:'#d9925a',want:[0,0,3],rumor:'They scamper after anything quick and shrill.'},
+  badger:{name:'Badgers',cans:8,color:'#c9c6d6',want:[2,2,0],hates:'squeak',rumor:'Slow and low suits them. A shrill noise sends them back to the sett.'},
+  toad:{name:'Toads',cans:6,color:'#8fc46a',want:[2,1,1],loves:'buzz',rumor:'They croak along to anything rough around the edges.'},
+  thrush:{name:'Thrushes',cans:5,color:'#8fb3d9',want:[1,1,2],loves:'tune',hates:'buzz',rumor:'Fond of something you could whistle. Fussy about a clean sound.'},
+  bat:{name:'Bats',cans:9,color:'#b78be0',want:[0,2,3],loves:'wobble',rumor:'Nobody has charmed one with a steady note.'}
+};
+const TOWNS=[
+  {name:'Mossy Hollow',brief:'Squirrels along the trail. One musician should manage.',par:25,
+   path:[[-.05,.42],[.18,.42],[.38,.3],[.6,.5],[.82,.4],[1.05,.4]],
+   packs:[{type:'squirrel',n:10,u:[.14,.86],d:[.1,.45]}]},
+  {name:'Badger Bank',brief:'Squirrels by the trail, badgers further back in the trees.',par:46,
+   path:[[-.05,.25],[.3,.22],[.7,.25],[.8,.4],[.5,.48],[.22,.52],[.3,.66],[.7,.62],[1.05,.6]],
+   packs:[{type:'squirrel',n:8,u:[.14,.86],d:[.1,.5]},{type:'badger',n:6,u:[.14,.86],d:[.5,.9]}]},
+  {name:'Croaking Copse',brief:'Toads in the loop, thrushes along the trail back.',par:52,
+   path:[[-.05,.3],[.25,.3],[.5,.28],[.75,.24],[.9,.38],[.8,.56],[.6,.47],[.38,.46],[.15,.47],[.1,.62],[.35,.7],[1.05,.7]],
+   packs:[{type:'toad',n:6,u:[.3,.42],d:[.1,.5]},{type:'thrush',n:7,u:[.52,.63],d:[.25,.65]}]},
+  {name:'Batley Mire',brief:'Bats at the first bend, badgers at the second, squirrels everywhere.',par:68,
+   path:[[-.05,.2],[.3,.18],[.7,.2],[.85,.32],[.7,.45],[.3,.42],[.15,.55],[.3,.68],[.7,.66],[1.05,.66]],
+   packs:[{type:'bat',n:6,u:[.3,.42],d:[.5,.95]},{type:'badger',n:6,u:[.6,.73],d:[.3,.8]},{type:'squirrel',n:8,u:[.1,.9],d:[.1,.45]}]}
+];
+function cont(h){return {len:LEN[h.tube],wide:WIDE[h.bore],bell:BELLV[h.bell],pace:PACEV[h.pace],valves:h.tune?2:0,fan:h.fan,crumple:h.crumple};}
+function hornStats(c){
+  const cost=4+70*(0.15+0.85*c.len)*(0.3+0.7*c.wide)*(0.3+0.7*c.bell);
+  return {cost,bright:1-c.wide,reach:0.15+0.85*c.bell,baseSemi:Math.round((1-c.len)*36)};
+}
+function simulate(h){
+  const c=cont(h),s=hornStats(c),step=SLOTS/c.pace,pat=VALVE_PAT[c.valves];
+  let breath=LUNG,n=0;const ev=[],bs=[];
+  for(let i=0;i<BARS*SLOTS;i++){
+    if(i%step===0&&(!h.bars||h.bars[i>>3])){
+      const off=pat[n%pat.length];n++;
+      if(breath>=s.cost){breath-=s.cost;ev.push({slot:i,squeak:false,semi:s.baseSemi+off});}
+      else ev.push({slot:i,squeak:true,semi:s.baseSemi+off+19});
+    }
+    bs.push(breath);breath=Math.min(LUNG,breath+REFILL);
+  }
+  return {ev,bs,stats:s,squeakFrac:ev.length?ev.filter(e=>e.squeak).length/ev.length:0};
+}
+function character(h){return simulate(Object.assign({},h,{bars:null}));}
+function judge(a,h,sim){
+  const has={wobble:h.fan,buzz:h.crumple,tune:h.tune,squeak:sim.squeakFrac>.1};
+  const fled=!!(a.hates&&has[a.hates]);
+  const hits=(h.tube===a.want[0])+(h.bore===a.want[1])+(h.pace===a.want[2])+(a.loves&&has[a.loves]?1:0);
+  const need=3+(a.loves?1:0);
+  return {hits,need,fled,follow:!fled&&hits===need};
+}
+function parts(h){return (h.tube+1)+(h.bell+1)*2+(h.tune?2:0)+(h.fan?3:0)+(h.crumple?3:0);}
+function bandCost(band){return FEE+band.reduce((a,h)=>a+WAGE+parts(h),0);}
+function rng(seed){let a=seed;return()=>{a=(a*1664525+1013904223)>>>0;return a/4294967296;};}
+function buildPath(c){
+  const pts=[];
+  for(let i=0;i<c.length-1;i++){
+    const p0=c[Math.max(0,i-1)],p1=c[i],p2=c[i+1],p3=c[Math.min(c.length-1,i+2)];
+    for(let s=0;s<16;s++){const t=s/16,t2=t*t,t3=t2*t,q=k=>.5*(2*p1[k]+(-p0[k]+p2[k])*t+(2*p0[k]-5*p1[k]+4*p2[k]-p3[k])*t2+(-p0[k]+3*p1[k]-3*p2[k]+p3[k])*t3);
+      pts.push([q(0),q(1)]);}
+  }
+  pts.push(c[c.length-1]);
+  const len=[0];for(let i=1;i<pts.length;i++)len.push(len[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));
+  return {pts,len,total:len[len.length-1]};
+}
+function posAt(P,u){
+  u=Math.max(0,Math.min(1,u));const d=u*P.total;let i=1;
+  while(i<P.len.length-1&&P.len[i]<d)i++;
+  const a=P.pts[i-1],b=P.pts[i],seg=P.len[i]-P.len[i-1]||1,f=(d-P.len[i-1])/seg;
+  return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,(b[0]-a[0])/seg,(b[1]-a[1])/seg];
+}
+function makeCritters(ti,P){
+  const t=TOWNS[ti],r=rng(77+ti*13),out=[];
+  t.packs.forEach(pk=>{for(let i=0;i<pk.n;i++){
+    const p=posAt(P,pk.u[0]+(pk.u[1]-pk.u[0])*r()),off=(pk.d[0]+(pk.d[1]-pk.d[0])*r())*DMAX,side=r()<.5?-1:1;
+    out.push({id:pk.type+i,type:pk.type,ph:r()*6.3,
+      x:Math.max(.03,Math.min(.97,p[0]-p[3]*off*side)),y:Math.max(.04,Math.min(.76,p[1]+p[2]*off*side))});
+  }});
+  return out;
+}
+function songBars(h,np){const o=[];for(let b=0;b<BARS;b++)o.push(np<2||h.in[(b>>1)%np]?1:0);return o;}
+function planMarch(P,band,crit,dt){
+  const sims=band.map(simulate);
+  const J=band.map(h=>{const o={},ch=character(h);for(const k in ANIMALS)o[k]=judge(ANIMALS[k],h,ch);return o;});
+  const out={},barDur=SLOTS*slotDur;
+  for(let t=0;t<T;t+=dt||1/30){
+    const bar=Math.min(BARS-1,Math.floor(t/barDur));
+    const on=band.map(h=>!h.bars||!!h.bars[bar]);
+    const scary={};band.forEach((h,m)=>{if(on[m])for(const k in ANIMALS)if(J[m][k].fled)scary[k]=m;});
+    crit.forEach(c=>{const e=out[c.id];if(e&&e.kind==='follow'&&e.bolt===undefined&&scary[c.type]!==undefined)e.bolt=t;});
+    band.forEach((h,m)=>{
+      if(!on[m])return;const u=(t-m*LAG)/T;if(u<0)return;
+      const p=posAt(P,u),R=sims[m].stats.reach*DMAX;
+      crit.forEach(c=>{
+        if(out[c.id])return;const dx=c.x-p[0],dy=c.y-p[1];if(dx*dx+dy*dy>R*R)return;
+        const j=J[m][c.type];
+        if(j.fled)out[c.id]={t,kind:'fled',by:m};
+        else if(j.follow&&scary[c.type]===undefined)out[c.id]={t,kind:'follow',by:m};
+      });
+    });
+  }
+  return {sims,J,out};
+}
+//<PURE
+
+const $=id=>document.getElementById(id);
+const BANDCOL=['#e0a93b','#62c0a8','#e4627a'];
+const ORD=['1st','2nd','3rd'];
+const newHorn=()=>({tube:1,bore:1,bell:1,pace:1,tune:false,fan:false,crumple:false,in:[1,1,1],col:0});
+const fresh=()=>({ti:0,day:1,spent:0,made:0,bank:0,parts:1,band:[newHorn()],sel:0,gone:[],log:[],left:REHEARSALS,solved:{}});
+let S=fresh();
+let P=null,critters=[],marching=null,won=false,par=0,react=null,trees=[];
+const H=()=>S.band[S.sel];
+const colOf=h=>BANDCOL[h.col||0];
+const hornKey=h=>[h.tube,h.bore,h.bell,h.pace,h.tune,h.fan,h.crumple].join('|');
+function hornLabel(h){
+  return [TUBE[h.tube]+' tube',BORE[h.bore]+' bore',PACE[h.pace],BELL[h.bell]+' bell']
+    .concat(h.tune?['valves']:[],h.fan?['fan']:[],h.crumple?['crumpled']:[]).join(' · ');
+}
+function dotsHTML(hits,need,mini){
+  let s='<span class="dots'+(mini?' mini':'')+(hits===need?' full':'')+'" aria-label="'+hits+' of '+need+' right">';
+  for(let i=0;i<need;i++)s+='<i class="'+(i<hits?'on':'')+'"></i>';
+  return s+'</span>';
+}
+
+function buildTown(){
+  const t=TOWNS[S.ti];P=buildPath(t.path);
+  critters=makeCritters(S.ti,P);critters.forEach(c=>c.state=S.gone.includes(c.id)?'gone':'idle');
+  const r=rng(5+S.ti);trees=[];for(let i=0;i<46;i++)trees.push([r(),r()*.8,.7+r()*.6]);
+  par=t.par;react=null;
+  $('town').textContent=t.name;$('brief').textContent=t.brief;
+  won=critters.every(c=>c.state==='gone');
+}
+function leftOf(type){return critters.filter(c=>c.type===type&&c.state!=='gone');}
+const live=()=>react&&!marching&&react.key===hornKey(H())?react.res:null;
+
+/* ---------- rendering ---------- */
+function renderCards(){
+  const t=TOWNS[S.ti],r=live();
+  $('cards').innerHTML=t.packs.map(pk=>{
+    const a=ANIMALS[pk.type],left=leftOf(pk.type),need=3+(a.loves?1:0),rr=r&&r[pk.type];
+    let v,cls='';
+    if(!left.length){v='All canned';cls='all';}
+    else if(!rr){v=S.left?'Rehearse a horn to see how they react':'No rehearsals left today';cls='ask';}
+    else if(rr.fled){v='Ran off. Something in that horn scares them.';cls='fled';}
+    else if(rr.hits===rr.need){v='Dancing the can-can. They will follow this horn.';cls='all';}
+    else v=rr.hits+' of '+rr.need+' right. Not enough to follow.';
+    return '<div class="card'+(left.length?'':' gone')+'"><div class="nm"><span class="dot" style="background:'+a.color+'"></span>'+a.name+
+      '<span class="left">'+left.length+' left<br>'+a.cans+' cans each</span></div><div class="rumor">'+a.rumor+'</div>'+
+      (left.length?'<button type="button" class="call" id="call-'+pk.type+'" data-type="'+pk.type+'">Hear their call</button>':'')+
+      dotsHTML(rr&&!rr.fled?rr.hits:0,need)+
+      (S.solved[pk.type]?'<div class="note">Their horn: '+S.solved[pk.type]+'</div>':'')+
+      '<div class="verdict '+cls+'">'+v+'</div></div>';
+  }).join('');
+}
+function renderLog(){
+  const t=TOWNS[S.ti];
+  if(!S.log.length){$('log').innerHTML='<p class="info">Nothing yet. Every rehearsal is written here, with how each kind of animal reacted.</p>';return;}
+  let s='<table><thead><tr><th>Horn</th>'+t.packs.map(pk=>'<th><span class="dot" style="background:'+ANIMALS[pk.type].color+'"></span> '+ANIMALS[pk.type].name+'</th>').join('')+'</tr></thead><tbody>';
+  S.log.forEach(e=>{
+    s+='<tr><td class="horn">'+e.label+'</td>'+t.packs.map(pk=>{const r=e.res[pk.type];return '<td>'+(r.fled?'<span class="ran">Ran off</span>':dotsHTML(r.hits,r.need,true))+'</td>';}).join('')+'</tr>';
+  });
+  $('log').innerHTML=s+'</tbody></table>';
+}
+function renderBand(){
+  let h=S.band.map((b,i)=>'<button type="button" id="mus'+i+'" data-i="'+i+'" aria-pressed="'+(i===S.sel)+'"><span class="sw" style="background:'+colOf(b)+'"></span>'+ORD[i]+'</button>').join('');
+  if(S.band.length>1)h+='<button type="button" class="ghost" id="fwdMus"'+(S.sel===0?' disabled':'')+'>Move forward</button><button type="button" class="ghost" id="backMus"'+(S.sel===S.band.length-1?' disabled':'')+'>Move back</button>';
+  if(S.band.length<MAXBAND)h+='<button type="button" class="ghost" id="addMus">Add musician</button>';
+  if(S.band.length>1)h+='<button type="button" class="ghost" id="delMus">Send this one home</button>';
+  $('band').innerHTML=h;
+  const np=S.parts,L='ABC';
+  document.querySelectorAll('#parts button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===np));
+  let f='';for(let st=0;st<4;st++)f+='<span data-s="'+st+'">'+(np>1?L[st%np]:'All')+'</span>';
+  $('form').innerHTML=f;
+  let q='';
+  if(np>1)S.band.forEach((hn,m)=>{q+='<span class="sw" style="background:'+colOf(hn)+'"></span>';
+    for(let p=0;p<np;p++)q+='<button type="button" class="cell" id="cell'+m+'_'+p+'" data-m="'+m+'" data-p="'+p+'" aria-pressed="'+!!hn.in[p]+'" aria-label="'+ORD[m]+' musician plays in part '+L[p]+'" style="--c:'+colOf(hn)+'">'+L[p]+'</button>';});
+  $('seq').style.gridTemplateColumns='14px repeat('+np+',1fr)';$('seq').innerHTML=q;lastBar=-2;
+}
+function syncControls(){
+  const h=H();
+  document.querySelectorAll('.seg[data-k]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===h[g.dataset.k])));
+  ['tune','fan','crumple'].forEach(k=>$(k).setAttribute('aria-pressed',h[k]));
+}
+function renderInfo(){
+  const sim=character(H()),s=sim.stats,can=64/s.cost;
+  const sustain=can>=8?8:can>=4?4:can>=2?2:can>=1?1:0;
+  $('breath').innerHTML='Each note costs <strong>'+Math.round(s.cost)+'</strong> breath; lungs refill 64 a bar. '+
+    (sustain?'This horn can hold <strong>'+sustain+' a bar</strong>.':'This horn is too big to hold even 1 a bar.')+
+    (sim.squeakFrac>0?' <span class="warn">Played without rests, '+Math.round(sim.squeakFrac*100)+'% of notes squeak.</span>':'');
+  const pp=S.band.reduce((a,h)=>a+parts(h),0),m=S.band.length;
+  $('cost').innerHTML='Today\'s band costs <strong>'+bandCost(S.band)+' cans</strong>: '+m+(m>1?' musicians':' musician')+' at '+WAGE+', '+pp+' in horn parts, '+FEE+' for the day.';
+  $('day').textContent='Day '+S.day+' · this wood '+(S.made-S.spent)+' cans · pantry '+S.bank;
+  $('rehearse').textContent=S.left?'Rehearse ('+S.left+' left today)':'No rehearsals left today';
+  $('rehearse').disabled=!S.left||!!marching||won;
+  $('moveon').hidden=won||S.day<2||!!marching;
+}
+function renderAll(){S.band.forEach(h=>h.bars=songBars(h,S.parts));renderBand();syncControls();renderCards();renderLog();renderInfo();drawHorn();}
+function changed(preview){renderAll();if(preview)previewToot();}
+
+/* ---------- audio ---------- */
+let ctx=null,master=null,lastPrev=0;
+function audio(){
+  try{
+    if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;ctx=new AC();
+      master=ctx.createDynamicsCompressor();master.connect(ctx.destination);}
+    if(ctx.state==='suspended')ctx.resume();
+  }catch(e){ctx=null;}
+  return ctx;
+}
+const hz=semi=>261.63*Math.pow(2,(semi-12)/12);
+function voice(t,semi,dur,c,s,squeak,mix){
+  const f=ctx.createBiquadFilter(),g=ctx.createGain(),o1=ctx.createOscillator();
+  const freq=hz(semi),vol=(0.1+0.2*c.bell)*(squeak?.6:1)*mix;
+  let stop;
+  if(squeak){
+    dur=.12;o1.type='square';
+    o1.frequency.setValueAtTime(freq*.88,t);o1.frequency.exponentialRampToValueAtTime(freq*1.06,t+.07);
+    f.type='bandpass';f.frequency.value=Math.min(freq*1.4,9000);f.Q.value=3;o1.connect(f);
+    stop=()=>o1.stop(t+dur+.05);
+  }else{
+    dur=Math.max(.14,dur);
+    const o2=ctx.createOscillator(),g1=ctx.createGain(),g2=ctx.createGain(),pre=ctx.createGain();
+    o1.type='sawtooth';o2.type='triangle';o1.frequency.value=freq;o2.frequency.value=freq*1.004;
+    g1.gain.value=.2+.8*s.bright;g2.gain.value=1-.6*s.bright;
+    o1.connect(g1).connect(pre);o2.connect(g2).connect(pre);
+    f.type='lowpass';f.Q.value=1.5+3*s.bright+(c.crumple?5:0);
+    const peak=Math.min(12000,freq*(2+9*s.bright)),rest=Math.min(12000,freq*(1.2+4*s.bright));
+    f.frequency.setValueAtTime(freq,t);f.frequency.linearRampToValueAtTime(peak,t+.04);f.frequency.setTargetAtTime(rest,t+.04,.12);
+    if(c.crumple){
+      const ws=ctx.createWaveShaper(),cv=new Float32Array(257);
+      for(let i=0;i<257;i++){const x=i/128-1;cv[i]=Math.tanh(x*9)*.7+(x>0?.15:0);}
+      ws.curve=cv;pre.connect(ws).connect(f);
+    }else pre.connect(f);
+    o2.start(t);stop=()=>{o1.stop(t+dur+.05);o2.stop(t+dur+.05);};
+  }
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.02);
+  g.gain.setValueAtTime(vol,t+Math.max(.03,dur-.05));g.gain.linearRampToValueAtTime(0,t+dur);
+  f.connect(g);
+  if(c.fan){
+    const tg=ctx.createGain(),lfo=ctx.createOscillator(),lg=ctx.createGain();
+    tg.gain.value=.6;lfo.frequency.value=9;lg.gain.value=.4;lfo.connect(lg).connect(tg.gain);
+    g.connect(tg).connect(master);lfo.start(t);lfo.stop(t+dur+.05);
+  }else g.connect(master);
+  o1.start(t);stop();
+}
+function chirp(t,semi,dur){
+  const o=ctx.createOscillator(),g=ctx.createGain(),f=hz(semi);
+  o.type='sine';o.frequency.setValueAtTime(f*1.03,t);o.frequency.exponentialRampToValueAtTime(f,t+.05);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.22,t+.015);g.gain.setValueAtTime(.22,t+Math.max(.03,dur-.06));g.gain.linearRampToValueAtTime(0,t+dur);
+  o.connect(g).connect(master);o.start(t);o.stop(t+dur+.02);
+}
+function thump(t,loud){
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(45,t+.1);
+  g.gain.setValueAtTime(loud,t);g.gain.exponentialRampToValueAtTime(.001,t+.14);
+  o.connect(g).connect(master);o.start(t);o.stop(t+.16);
+}
+function schedule(h,sim,t0,slots,mix){
+  const c=cont(h),dur=Math.min(1.1,slotDur*(SLOTS/c.pace)*.85);
+  sim.ev.forEach(e=>{if(e.slot<slots)voice(t0+e.slot*slotDur,e.semi,dur,c,sim.stats,e.squeak,mix);});
+}
+function previewToot(){
+  const now=performance.now();if(now-lastPrev<110||marching||!audio())return;lastPrev=now;
+  const c=cont(H()),s=hornStats(c);voice(ctx.currentTime+.01,s.baseSemi,.22,c,s,false,1);
+}
+function playCall(type){
+  if(marching||!audio())return;
+  const a=ANIMALS[type],pace=PACEV[a.want[2]],semi=Math.round((1-LEN[a.want[0]])*36)+12,gap=SLOTS/pace*slotDur,t0=ctx.currentTime+.05;
+  for(let i=0;i<pace*2;i++)chirp(t0+i*gap,semi,Math.min(.9,gap*.8));
+  critters.forEach(c=>{if(c.type===type&&c.state==='idle')c.callT=performance.now();});
+}
+function rehearse(){
+  if(marching||won||S.left<=0)return;
+  if(!audio()){$('msg').textContent='Sound is blocked in this browser, so the band cannot play.';return;}
+  const h=H(),sim=character(h);schedule(h,sim,ctx.currentTime+.05,SLOTS*2,1);
+  const res={};let line=[];
+  TOWNS[S.ti].packs.forEach(pk=>{const a=ANIMALS[pk.type],j=judge(a,h,sim);res[pk.type]={hits:j.hits,need:j.need,fled:j.fled};
+    if(j.follow&&!S.solved[pk.type]){S.solved[pk.type]=hornLabel(h).replace(/ · (Small|Medium|Large) bell/,'');line.push(a.name+' are dancing the can-can!');}});
+  S.left--;S.log.unshift({label:hornLabel(h),res});
+  react={key:hornKey(h),res};
+  $('msg').className=line.length?'win':'';
+  $('msg').textContent=line.length?line.join(' ')+' That horn will bring them.':(S.left?'Written in the notebook. '+S.left+' rehearsals left today.':'That was the last rehearsal today. March, or move on.');
+  renderAll();
+}
+
+/* ---------- drawing ---------- */
+function fit(c){const d=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
+  if(c.width!==Math.round(w*d)||c.height!==Math.round(h*d)){c.width=Math.round(w*d);c.height=Math.round(h*d);}
+  const g=c.getContext('2d');g.setTransform(d,0,0,d,0,0);return {g,w,h};}
+function drawHorn(){
+  const {g,w,h}=fit($('horn')),Hn=H(),C=cont(Hn);g.clearRect(0,0,w,h);
+  const col=colOf(Hn),cy=h/2+8,lw=3+C.wide*9,loops=1+Math.round(C.len*6),bellR=14+C.bell*30;
+  const x0=26,x1=w-30-bellR,span=Math.max(40,x1-x0);
+  g.lineCap='round';g.strokeStyle=col;g.lineWidth=lw;
+  g.beginPath();g.moveTo(x0,cy);g.lineTo(x1,cy);g.stroke();
+  const rx=Math.min(26,span/(loops+1)*.8),ry=16+C.len*18;
+  for(let i=0;i<loops;i++){const cx=x0+span*(i+1)/(loops+1);g.globalAlpha=i%2?.75:1;g.beginPath();g.ellipse(cx,cy-ry+lw/2,rx,ry,0,0,Math.PI*2);g.stroke();}
+  g.globalAlpha=1;
+  g.fillStyle='#f1e9d6';g.beginPath();g.moveTo(x0-16,cy-7);g.lineTo(x0,cy-3);g.lineTo(x0,cy+3);g.lineTo(x0-16,cy+7);g.closePath();g.fill();
+  for(let i=0;i<C.valves;i++){const vx=x0+22+i*16;g.fillStyle='#a39fba';g.fillRect(vx-4,cy-lw/2-16,8,16);g.fillStyle='#f1e9d6';g.fillRect(vx-6,cy-lw/2-20,12,5);}
+  g.fillStyle=col;g.beginPath();g.moveTo(x1-4,cy-lw/2);
+  const ex=x1+bellR*1.1,steps=C.crumple?9:1;
+  g.quadraticCurveTo(x1+bellR*.6,cy-lw/2-2,ex,cy-bellR);
+  for(let i=1;i<=steps;i++){const yy=cy-bellR+2*bellR*i/steps;g.lineTo(ex+(C.crumple&&i<steps?(i%2?-9:6):0),yy);}
+  g.quadraticCurveTo(x1+bellR*.6,cy+lw/2+2,x1-4,cy+lw/2);g.closePath();g.fill();
+  if(C.fan){g.strokeStyle='#1b1a2b';g.lineWidth=2.5;const fx=ex-bellR*.35,fr=bellR*.5;
+    for(let i=0;i<3;i++){const a=i*Math.PI/3+.3;g.beginPath();g.moveTo(fx-Math.cos(a)*fr*.4,cy-Math.sin(a)*fr);g.lineTo(fx+Math.cos(a)*fr*.4,cy+Math.sin(a)*fr);g.stroke();}}
+}
+function drawAnimal(g,type,x,y,ph,shake,dance){
+  const c=ANIMALS[type].color;
+  if(shake)x+=Math.sin(ph*9)*2;
+  let k=0;if(dance){k=Math.sin(ph*7);x+=k*2.5;}
+  g.fillStyle=c;g.strokeStyle=c;g.lineCap='round';
+  if(dance){g.lineWidth=2.2;g.beginPath();g.moveTo(x+(k>0?2:-2),y-3);g.lineTo(x+(k>0?10:-10),y-6-8*Math.abs(k));g.stroke();
+    g.beginPath();g.moveTo(x+(k>0?-2:2),y-3);g.lineTo(x+(k>0?-3:3),y+2);g.stroke();}
+  if(type==='bat'){
+    const fl=Math.sin(ph*3)*3;
+    g.beginPath();g.moveTo(x,y-5);g.lineTo(x-12,y-12+fl);g.lineTo(x-7,y-2);g.closePath();g.fill();
+    g.beginPath();g.moveTo(x,y-5);g.lineTo(x+12,y-12+fl);g.lineTo(x+7,y-2);g.closePath();g.fill();
+    g.beginPath();g.arc(x,y-5,4.5,0,7);g.fill();
+    g.fillStyle='#141322';g.beginPath();g.arc(x,y-6,1.1,0,7);g.fill();
+  }else if(type==='toad'){
+    g.beginPath();g.ellipse(x,y-4,8,5,0,0,7);g.fill();g.beginPath();g.arc(x-4,y-9,2.6,0,7);g.arc(x+4,y-9,2.6,0,7);g.fill();
+    g.fillStyle='#141322';g.beginPath();g.arc(x-4,y-9.5,1,0,7);g.arc(x+4,y-9.5,1,0,7);g.fill();
+  }else if(type==='thrush'){
+    g.beginPath();g.ellipse(x,y-5,7,5,0,0,7);g.fill();g.beginPath();g.arc(x+6,y-10,3.4,0,7);g.fill();
+    g.fillStyle='#e0a93b';g.beginPath();g.moveTo(x+9,y-11);g.lineTo(x+13,y-9.5);g.lineTo(x+9,y-8.5);g.fill();
+    g.fillStyle='#1b1a2b';[[-2,-4],[1,-3],[-1,-7]].forEach(d=>{g.beginPath();g.arc(x+d[0],y+d[1],.9,0,7);g.fill();});
+    g.beginPath();g.arc(x+7,y-10.5,1.1,0,7);g.fill();
+  }else if(type==='badger'){
+    g.beginPath();g.ellipse(x,y-5,9,6,0,0,7);g.fill();
+    g.fillStyle='#2b2938';g.beginPath();g.ellipse(x+8,y-7,4.5,3.4,0,0,7);g.fill();
+    g.fillStyle='#f1e9d6';g.fillRect(x+6,y-9,6,1.6);
+  }else{
+    g.lineWidth=4;g.beginPath();g.moveTo(x-5,y-3);g.quadraticCurveTo(x-15,y-6,x-11,y-15);g.stroke();
+    g.beginPath();g.ellipse(x,y-4,6,4.5,0,0,7);g.fill();g.beginPath();g.arc(x+4,y-9,2.8,0,7);g.fill();
+    g.fillStyle='#141322';g.beginPath();g.arc(x+5,y-9.5,1,0,7);g.fill();
+  }
+  if(shake){g.fillStyle='#e4627a';g.font='800 12px Figtree,sans-serif';g.fillText('!',x-2,y-18);}
+}
+const still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+let puffs=[],lastBar=-2;
+function drawStage(now){
+  const {g,w,h}=fit($('stage'));g.clearRect(0,0,w,h);
+  const tt=still?0:now/1000;
+  trees.forEach(p=>{const x=p[0]*w,y=p[1]*w,s=p[2];g.fillStyle='#1d3a34';g.beginPath();g.moveTo(x-7*s,y+6*s);g.lineTo(x,y-11*s);g.lineTo(x+7*s,y+6*s);g.fill();});
+  const M=S.band.length,t=marching?ctx.currentTime-marching.t0:0;
+  const bar=marching?Math.max(0,Math.min(BARS-1,Math.floor(t/(SLOTS*slotDur)))):-1;
+  if(bar!==lastBar){lastBar=bar;document.querySelectorAll('#form span').forEach(e=>e.classList.toggle('now',bar>=0&&+e.dataset.s===bar>>1));}
+  g.lineJoin='round';g.lineCap='round';g.lineWidth=16;
+  for(let b=0;b<BARS;b++){g.strokeStyle=bar>=0&&(b>>1)===(bar>>1)?'#6a5a3a':(b>>1)%2?'#4a4236':'#3d372e';g.beginPath();
+    for(let i=0;i<=12;i++){const q=posAt(P,(b+i/12)/BARS);i?g.lineTo(q[0]*w,q[1]*w):g.moveTo(q[0]*w,q[1]*w);}g.stroke();}
+  g.font='800 11px Figtree,sans-serif';g.textAlign='center';g.textBaseline='middle';
+  if(S.parts>1)for(let st=0;st<4;st++){const q=posAt(P,(st+.5)/4);g.fillStyle=bar>=0&&st===bar>>1?'#e0a93b':'#a39fba';g.fillText('ABC'[st%S.parts],q[0]*w,q[1]*w);}
+  g.textAlign='start';g.textBaseline='alphabetic';
+  {const fe=posAt(P,1),fx=w-38,fy=Math.max(48,Math.min(h-6,fe[1]*w+6)),sm=still?0:(now/900)%1;
+   g.fillStyle='#4a4666';g.fillRect(fx,fy-24,34,24);g.fillRect(fx+22,fy-40,7,16);
+   g.beginPath();g.moveTo(fx,fy-24);g.lineTo(fx+8,fy-32);g.lineTo(fx+8,fy-24);g.lineTo(fx+16,fy-32);g.lineTo(fx+16,fy-24);g.fill();
+   g.fillStyle='#e0a93b';g.fillRect(fx+5,fy-14,6,6);g.fillRect(fx+15,fy-14,6,6);
+   g.fillStyle='rgba(241,233,214,.35)';g.beginPath();g.arc(fx+25.5,fy-46-sm*10,3+sm*3,0,7);g.fill();}
+  const sims=marching?marching.plan.sims:S.band.map(character);
+  const mus=S.band.map((_,m)=>posAt(P,marching?(t-m*LAG)/T:.1-m*.04));
+  mus.forEach((p,m)=>{
+    if(marching&&!S.band[m].bars[bar])return;
+    g.fillStyle=colOf(S.band[m])+'18';g.strokeStyle=colOf(S.band[m])+'88';g.lineWidth=1;g.setLineDash([4,5]);
+    g.beginPath();g.arc(p[0]*w,p[1]*w,sims[m].stats.reach*DMAX*w,0,7);g.fill();g.stroke();g.setLineDash([]);
+  });
+  const tail=tm=>posAt(P,(tm-(M-1)*LAG)/T),R=live(),q0=mus[S.sel]||mus[0];
+  critters.forEach(c=>{
+    if(c.state==='gone')return;
+    let x=c.x*w,y=c.y*w+(still?0:Math.sin(tt*2+c.ph)*1.5),shake=false,dance=false;
+    const rr=R&&c.state==='idle'?R[c.type]:null;
+    if(c.callT){const a=(now-c.callT)/700;if(a>1)c.callT=0;else y-=Math.abs(Math.sin(a*Math.PI*2))*6;}
+    if(rr){
+      const dx=q0[0]*w-x,dy=q0[1]*w-y,dd=Math.hypot(dx,dy)||1;
+      if(rr.fled){shake=true;x-=dx/dd*8;y-=dy/dd*8;}
+      else{const lv=rr.hits/rr.need;x+=dx/dd*12*lv;y+=dy/dd*12*lv;
+        if(rr.hits===rr.need)dance=true;else if(!still&&rr.hits)y-=Math.abs(Math.sin(tt*4+c.ph))*4*lv;}
+    }
+    if(marching){
+      const e=marching.plan.out[c.id];
+      if(e&&c.state==='idle'&&t>=e.t){c.state=e.kind;c.k=e.kind==='follow'?marching.k++:0;c.jt=t;}
+      if(e&&c.state==='follow'&&e.bolt!==undefined&&t>=e.bolt)c.state='fled';
+      if(c.state==='follow'){
+        const q=tail(t-.3-c.k*.13),f=Math.min(1,(t-c.jt)/.45);
+        x=x+(q[0]*w-x)*f;y=y+(q[1]*w+4-Math.abs(Math.sin(t*9+c.k))*4-y)*f;dance=!still;
+      }
+    }
+    drawAnimal(g,c.type,x,y,tt+c.ph,shake||c.state==='fled',dance);
+    if(rr&&!rr.fled){
+      for(let i=0;i<rr.need;i++){const dx2=x-(rr.need-1)*3.5+i*7;g.beginPath();g.arc(dx2,y-21,2.4,0,7);
+        if(i<rr.hits){g.fillStyle=rr.hits===rr.need?'#62c0a8':'#e0a93b';g.fill();}else{g.strokeStyle='#5a5678';g.lineWidth=1.2;g.stroke();}}
+    }
+  });
+  if(marching){
+    marching.plan.sims.forEach((sim,m)=>sim.ev.forEach(e=>{if(!e.done&&t>=e.slot*slotDur){e.done=true;puffs.push({m,t,sq:e.squeak});}}));
+    puffs=puffs.filter(p=>t-p.t<.45);
+    puffs.forEach(p=>{const a=(t-p.t)/.45,q=mus[p.m];g.strokeStyle=p.sq?'rgba(228,98,122,'+(1-a)+')':'rgba(241,233,214,'+(.7-.7*a)+')';
+      g.lineWidth=p.sq?3:2;g.beginPath();g.arc(q[0]*w,q[1]*w,10+a*(p.sq?12:22),0,7);g.stroke();});
+  }
+  const slot=Math.max(0,Math.min(BARS*SLOTS-1,Math.floor(t/slotDur)));
+  for(let m=M-1;m>=0;m--){
+    const p=mus[m],x=p[0]*w,y=p[1]*w,puff=marching?1-sims[m].bs[slot]/LUNG:0,col=colOf(S.band[m]);
+    const bob=marching?Math.abs(Math.sin(t*Math.PI/slotDur/2))*3:0;
+    g.fillStyle='rgb('+Math.round(241-70*puff)+','+Math.round(233-150*puff)+','+Math.round(214-20*puff)+')';
+    g.beginPath();g.arc(x,y-6-bob,7+puff*4,0,7);g.fill();
+    g.fillStyle=col;g.beginPath();g.moveTo(x-7,y-11-bob);g.lineTo(x,y-25-bob);g.lineTo(x+7,y-11-bob);g.fill();
+    g.strokeStyle=col;g.lineWidth=3;g.beginPath();g.moveTo(x+4,y-6-bob);g.lineTo(x+13,y-10-bob);g.stroke();
+    g.beginPath();g.moveTo(x+11,y-15-bob);g.lineTo(x+18,y-17-bob);g.lineTo(x+18,y-5-bob);g.fill();
+    if(!marching&&m===S.sel&&M>1){g.strokeStyle='#f1e9d6';g.lineWidth=1.5;g.beginPath();g.arc(x,y-8,15,0,7);g.stroke();}
+  }
+  if(marching&&t>=T+(M-1)*LAG+.7)endMarch();
+  requestAnimationFrame(drawStage);
+}
+
+/* ---------- march ---------- */
+function startMarch(){
+  if(marching||won)return;
+  if(!audio()){$('msg').textContent='Sound is blocked in this browser, so the band cannot play.';return;}
+  const alive=critters.filter(c=>c.state!=='gone');alive.forEach(c=>{c.state='idle';});
+  const plan=planMarch(P,S.band,alive),t0=ctx.currentTime+.15,mix=1/Math.sqrt(S.band.length);
+  S.band.forEach((h,m)=>schedule(h,plan.sims[m],t0,BARS*SLOTS,mix));
+  for(let i=0;i<BARS*SLOTS;i+=2)thump(t0+i*slotDur,i%8===0?.22:.1);
+  marching={plan,t0,k:0};puffs=[];S.spent+=bandCost(S.band);
+  $('march').disabled=true;$('msg').className='';$('msg').textContent='Marching through '+TOWNS[S.ti].name+'.';
+  renderCards();renderInfo();
+}
+function endMarch(){
+  const got={},fled={},bolted={},plan=marching.plan;
+  critters.forEach(c=>{
+    const e=plan.out[c.id];if(!e||c.state==='gone')return;
+    if(e.kind==='follow'&&e.bolt===undefined){c.state='gone';S.gone.push(c.id);got[c.type]=(got[c.type]||0)+1;}
+    else{c.state='idle';(e.kind==='follow'?bolted:fled)[c.type]=1;}
+  });
+  marching=null;$('march').disabled=false;
+  const list=Object.keys(got).map(k=>got[k]+' '+ANIMALS[k].name.toLowerCase());
+  let m=list.length?list.join(', ')+' danced along to the cannery.':'Nobody followed.';
+  Object.keys(bolted).forEach(k=>m+=' Some '+ANIMALS[k].name.toLowerCase()+' joined the train, then bolted at a sound they hate.');
+  Object.keys(fled).forEach(k=>m+=' Some '+ANIMALS[k].name.toLowerCase()+' ran off when the band came near.');
+  const cans=Object.keys(got).reduce((a,k)=>a+got[k]*ANIMALS[k].cans,0);S.made+=cans;
+  m+=' The cannery made '+cans+' cans today.';
+  const left=critters.filter(c=>c.state!=='gone').length;
+  if(!left){finish(m);return;}
+  S.day++;S.left=REHEARSALS;react=null;m+=' '+left+' still in the wood. A new day: rehearse, march again, or move on.';
+  $('msg').className='';$('msg').textContent=m;renderAll();
+}
+function finish(pre){
+  if(marching||won)return;
+  won=true;const t=TOWNS[S.ti],total=t.packs.reduce((a,pk)=>a+pk.n*ANIMALS[pk.type].cans,0),best=total-par,net=S.made-S.spent;
+  const stars=net>=best?3:net>=best*.6?2:1;
+  $('msg').className='win';
+  $('msg').textContent=(pre?pre+' ':'')+'Done with '+t.name+': '+S.made+' cans made, '+S.spent+' spent on the band, '+net+' to keep. The best possible is '+best+'. '+'★'.repeat(stars)+'☆'.repeat(3-stars);
+  $('march').textContent=S.ti<TOWNS.length-1?'Next wood':'Play again';renderAll();
+}
+function nextTown(){
+  const bank=S.bank+S.made-S.spent,band=S.band,ti=(S.ti+1)%TOWNS.length;
+  S=fresh();S.bank=bank;S.ti=ti;S.band=band;S.sel=0;
+  buildTown();$('march').textContent='March';
+  $('msg').className='';$('msg').textContent='Hear their calls, rehearse a few horns, then march.';renderAll();
+}
+
+/* ---------- wiring ---------- */
+document.querySelectorAll('.seg[data-k]').forEach(gr=>gr.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||marching)return;H()[gr.dataset.k]=+b.dataset.v;changed(true);}));
+['tune','fan','crumple'].forEach(k=>$(k).addEventListener('click',()=>{if(marching)return;H()[k]=!H()[k];changed(true);}));
+$('band').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b||marching)return;
+  if(b.id==='addMus'){const n=newHorn();n.col=[0,1,2].find(c=>!S.band.some(h=>(h.col||0)===c));S.band.push(n);S.sel=S.band.length-1;}
+  else if(b.id==='fwdMus'||b.id==='backMus'){const j=S.sel+(b.id==='fwdMus'?-1:1);if(j<0||j>=S.band.length)return;const x=S.band[S.sel];S.band[S.sel]=S.band[j];S.band[j]=x;S.sel=j;}
+  else if(b.id==='delMus'){S.band.splice(S.sel,1);S.sel=Math.min(S.sel,S.band.length-1);}
+  else S.sel=+b.dataset.i;
+  changed(false);
+});
+$('seq').addEventListener('click',e=>{const b=e.target.closest('.cell');if(!b||marching)return;const hn=S.band[+b.dataset.m];hn.in[+b.dataset.p]=hn.in[+b.dataset.p]?0:1;changed(false);});
+$('parts').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||marching)return;S.parts=+b.dataset.v;changed(false);});
+$('cards').addEventListener('click',e=>{const b=e.target.closest('.call');if(b)playCall(b.dataset.type);});
+$('rehearse').addEventListener('click',rehearse);
+$('march').addEventListener('click',()=>{won?nextTown():startMarch();});
+$('moveon').addEventListener('click',()=>finish(''));
+document.addEventListener('pointerdown',()=>{audio();},{once:true});
+window.addEventListener('resize',drawHorn);
+
+function start(data){
+  if(data&&Array.isArray(data.band)&&data.band.length&&data.band[0].tube!==undefined&&TOWNS[data.ti]){
+    S=Object.assign(fresh(),data);S.band=S.band.slice(0,MAXBAND).map(h=>Object.assign(newHorn(),h));S.sel=0;
+  }
+  buildTown();renderAll();
+  if(won){$('march').textContent=S.ti<TOWNS.length-1?'Next wood':'Play again';$('msg').className='win';$('msg').textContent='Done with '+TOWNS[S.ti].name+'.';}
+  else $('msg').textContent='Hear their calls, rehearse a few horns, then march.';
+  requestAnimationFrame(drawStage);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(drawHorn);
+}
+try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>S);}catch(e){}
+if(window.claude&&window.claude.hot&&window.claude.hot.ready)window.claude.hot.ready(start);
+else start((window.claude&&window.claude.hot&&window.claude.hot.data)||{});
+</script>
+</body>
+</html>
