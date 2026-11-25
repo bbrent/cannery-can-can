@@ -1,0 +1,14 @@
+{
+  "id": "cannery-can-can",
+  "name": "Cannery Can-Can",
+  "genre": "Music puzzle",
+  "description": "Build each animal the horn it wants, then march the band through the song.",
+  "devices": [
+    "phone",
+    "tablet",
+    "desktop"
+  ],
+  "trust": "casual",
+  "url": "/cannery-can-can/",
+  "leaderboards": []
+}
